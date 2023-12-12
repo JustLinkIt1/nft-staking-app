@@ -9,18 +9,18 @@ const Home: NextPage = () => {
   return (
     <div className={styles.container}>
       {/* Top Section */}
-      <h1 className={styles.h1}>thirdweb Deploy - Custom Staking Contract</h1>
+      <h1 className={styles.h1}>Cerveau AI Staking</h1>
       <div className={styles.nftBoxGrid}>
         <div
           className={styles.optionSelectBox}
           role="button"
           onClick={() => router.push("/mint")}
         >
-          {/* Mint a new NFT */}
+          {/* No use */}
           <Image src="/icons/drop.webp" alt="drop" width={64} height={64} />
           <h2 className={styles.selectBoxTitle}>Mint a new NFT</h2>
           <p className={styles.selectBoxDescription}>
-            Use the NFT Drop Contract to claim an NFT from the collection.
+            This does nothing as we are already minted
           </p>
         </div>
 
