@@ -16,107 +16,75 @@ const tokenContractAddress = "0xc94F5C4a091418D03Ff1989B48Db3139D1Af0D25";
 const stakingContractAddress = "0x78919BAda94AF2703cbD29bfec663b3EaCA3F875";
 
 const Stake: NextPage = () => {
-  // Wallet Connection Hooks
   const address = useAddress();
   const connectWithMetamask = useMetamask();
 
-  // Contract Hooks
-  const { contract: nftDropContract } = useContract(
-    nftDropContractAddress,
-    "nft-drop"
-  );
-
-  const { contract: tokenContract } = useContract(
-    tokenContractAddress,
-    "token"
-  );
-
+  const { contract: nftDropContract } = useContract(nftDropContractAddress, "nft-drop");
+  const { contract: tokenContract } = useContract(tokenContractAddress, "token");
   const { contract, isLoading } = useContract(stakingContractAddress);
 
-  // Load Unstaked NFTs
   const { data: ownedNfts } = useOwnedNFTs(nftDropContract, address);
-
-  // Load Balance of Token
   const { data: tokenBalance } = useTokenBalance(tokenContract, address);
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Custom contract functions
-  ///////////////////////////////////////////////////////////////////////////
   const [stakedNfts, setStakedNfts] = useState<any[]>([]);
   const [claimableRewards, setClaimableRewards] = useState<BigNumber>();
 
   useEffect(() => {
-    if (!contract) return;
+    if (!contract || !address) return;
 
     async function loadStakedNfts() {
-      const stakedTokens = await contract?.call("getStakedTokens", address);
+      const stakedTokens = await contract?.call("getStakedTokens", [address]);
 
-      // For each staked token, fetch it from the sdk
       const stakedNfts = await Promise.all(
-        stakedTokens?.map(
-          async (stakedToken: { staker: string; tokenId: BigNumber }) => {
-            const nft = await nftDropContract?.get(stakedToken.tokenId);
-            return nft;
-          }
-        )
+        stakedTokens?.map(async (stakedToken: { staker: string; tokenId: BigNumber }) => {
+          const nft = await nftDropContract?.get(stakedToken.tokenId);
+          return nft;
+        })
       );
 
       setStakedNfts(stakedNfts);
-      console.log("setStakedNfts", stakedNfts);
     }
 
-    if (address) {
-      loadStakedNfts();
-    }
+    loadStakedNfts();
   }, [address, contract, nftDropContract]);
 
   useEffect(() => {
     if (!contract || !address) return;
 
     async function loadClaimableRewards() {
-      const cr = await contract?.call("availableRewards", address);
-      console.log("Loaded claimable rewards", cr);
+      const cr = await contract?.call("availableRewards", [address]);
       setClaimableRewards(cr);
     }
 
     loadClaimableRewards();
   }, [address, contract]);
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Write Functions
-  ///////////////////////////////////////////////////////////////////////////
   async function stakeNft(id: string) {
-    if (!address) return;
+    if (!address || !nftDropContract) return;
 
-    const isApproved = await nftDropContract?.isApproved(
-      address,
-      stakingContractAddress
-    );
-    // If not approved, request approval
+    const isApproved = await nftDropContract.isApproved(address, stakingContractAddress);
     if (!isApproved) {
-      await nftDropContract?.setApprovalForAll(stakingContractAddress, true);
+      await nftDropContract.setApprovalForAll(stakingContractAddress, true);
     }
-    const stake = await contract?.call("stake", id);
+    await contract?.call("stake", id);
   }
 
   async function withdraw(id: BigNumber) {
-    const withdraw = await contract?.call("withdraw", id);
+    await contract?.call("withdraw", id);
   }
 
   async function claimRewards() {
-    const claim = await contract?.call("claimRewards");
+    await contract?.call("claimRewards");
   }
 
   if (isLoading) {
-    return <div>Loading</div>;
+    return <div>Loading...</div>;
   }
 
   return (
     <div className={styles.container}>
       <h1 className={styles.h1}>Stake Your NFTs</h1>
-
       <hr className={`${styles.divider} ${styles.spacerTop}`} />
-
       {!address ? (
         <button className={styles.mainButton} onClick={connectWithMetamask}>
           Connect Wallet
@@ -124,7 +92,6 @@ const Stake: NextPage = () => {
       ) : (
         <>
           <h2>Your Tokens</h2>
-
           <div className={styles.tokenGrid}>
             <div className={styles.tokenItem}>
               <h3 className={styles.tokenLabel}>Claimable Rewards</h3>
@@ -144,16 +111,13 @@ const Stake: NextPage = () => {
               </p>
             </div>
           </div>
-
           <button
             className={`${styles.mainButton} ${styles.spacerTop}`}
             onClick={() => claimRewards()}
           >
             Claim Rewards
           </button>
-
           <hr className={`${styles.divider} ${styles.spacerTop}`} />
-
           <h2>Your Staked NFTs</h2>
           <div className={styles.nftBoxGrid}>
             {stakedNfts?.map((nft) => (
@@ -172,11 +136,8 @@ const Stake: NextPage = () => {
               </div>
             ))}
           </div>
-
           <hr className={`${styles.divider} ${styles.spacerTop}`} />
-
           <h2>Your Unstaked NFTs</h2>
-
           <div className={styles.nftBoxGrid}>
             {ownedNfts?.map((nft) => (
               <div className={styles.nftBox} key={nft.metadata.id.toString()}>
@@ -201,3 +162,4 @@ const Stake: NextPage = () => {
 };
 
 export default Stake;
+
