@@ -84,7 +84,9 @@ const Stake: NextPage = () => {
   return (
     <div className={styles.container}>
       <h1 className={styles.h1}>Stake Your NFTs</h1>
+
       <hr className={`${styles.divider} ${styles.spacerTop}`} />
+
       {!address ? (
         <button className={styles.mainButton} onClick={connectWithMetamask}>
           Connect Wallet
@@ -92,6 +94,7 @@ const Stake: NextPage = () => {
       ) : (
         <>
           <h2>Your Tokens</h2>
+
           <div className={styles.tokenGrid}>
             <div className={styles.tokenItem}>
               <h3 className={styles.tokenLabel}>Claimable Rewards</h3>
@@ -111,13 +114,16 @@ const Stake: NextPage = () => {
               </p>
             </div>
           </div>
+
           <button
             className={`${styles.mainButton} ${styles.spacerTop}`}
             onClick={() => claimRewards()}
           >
             Claim Rewards
           </button>
+
           <hr className={`${styles.divider} ${styles.spacerTop}`} />
+
           <h2>Your Staked NFTs</h2>
           <div className={styles.nftBoxGrid}>
             {stakedNfts?.map((nft) => (
@@ -136,7 +142,9 @@ const Stake: NextPage = () => {
               </div>
             ))}
           </div>
+
           <hr className={`${styles.divider} ${styles.spacerTop}`} />
+
           <h2>Your Unstaked NFTs</h2>
           <div className={styles.nftBoxGrid}>
             {ownedNfts?.map((nft) => (
@@ -162,4 +170,3 @@ const Stake: NextPage = () => {
 };
 
 export default Stake;
-
