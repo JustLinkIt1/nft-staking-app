@@ -11,6 +11,11 @@ import type { NextPage } from "next";
 import { useEffect, useState } from "react";
 import styles from "../styles/Home.module.css";
 
+interface StakedToken {
+  staker: string;
+  tokenId: BigNumber;
+}
+
 const nftDropContractAddress = "0x91fAaA600658052078Bc9622e0c1700A14579ce9";
 const tokenContractAddress = "0xc94F5C4a091418D03Ff1989B48Db3139D1Af0D25";
 const stakingContractAddress = "0x78919BAda94AF2703cbD29bfec663b3EaCA3F875";
@@ -33,11 +38,16 @@ const Stake: NextPage = () => {
     if (!stakingContract || !address) return;
   
     const loadStakedNfts = async () => {
+      if (!nftDropContract) {
+        console.error("NFT Drop Contract is not loaded");
+        return;
+      }
+    
       try {
-        const stakedTokensResponse = await stakingContract.call("getStakedTokens", address);
+        const stakedTokensResponse: StakedToken[] = await stakingContract.call("getStakedTokens", [address]);
         const stakedNftsData = await Promise.all(
-          stakedTokensResponse.map(async (stakedToken) => {
-            const nftData = await nftDropContract.get(stakedToken.tokenId);
+          stakedTokensResponse.map(async (stakedToken: StakedToken) => {
+            const nftData = await nftDropContract.get(stakedToken.tokenId.toString());
             return nftData;
           })
         );
@@ -49,7 +59,7 @@ const Stake: NextPage = () => {
   
     const loadClaimableRewards = async () => {
       try {
-        const rewards = await stakingContract.call("availableRewards", address);
+        const rewards = await stakingContract.call("availableRewards", [address]);
         setClaimableRewards(BigNumber.from(rewards));
       } catch (error) {
         console.error("Error loading claimable rewards:", error);
@@ -61,7 +71,7 @@ const Stake: NextPage = () => {
   }, [address, stakingContract, nftDropContract]);
   
 
-  const stakeNft = async (id) => {
+  const stakeNft = async (id: string) => {
     if (!address || !nftDropContract || !stakingContract) return;
 
     const isApproved = await nftDropContract.isApproved(address, stakingContractAddress);
@@ -69,13 +79,14 @@ const Stake: NextPage = () => {
       await nftDropContract.setApprovalForAll(stakingContractAddress, true);
     }
 
-    await stakingContract.call("stake", id);
+    await stakingContract.call("stake", [id]);
+
   };
 
-  const withdraw = async (id) => {
+  const withdraw = async (id: string) => {
     if (!stakingContract) return;
 
-    await stakingContract.call("withdraw", id);
+    await stakingContract.call("withdraw", [id]);
   };
 
   const claimRewards = async () => {
@@ -92,9 +103,9 @@ const Stake: NextPage = () => {
     <div className={styles.container}>
       {/* Connect Wallet Button */}
       {!address ? (
-        <button className={styles.mainButton} onClick={connectWithMetamask}>
-          Connect Wallet
-        </button>
+        <button className={styles.mainButton} onClick={(e) => connectWithMetamask()}>
+  Connect Wallet
+</button>
       ) : (
         <>
           {/* Display Token Balance and Claimable Rewards */}
@@ -159,3 +170,4 @@ const Stake: NextPage = () => {
 };
 
 export default Stake;
+
