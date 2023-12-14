@@ -33,6 +33,8 @@ const Stake: NextPage = () => {
 
   const [stakedNfts, setStakedNfts] = useState<any[]>([]);
   const [claimableRewards, setClaimableRewards] = useState<BigNumber>();
+  const [isUnstaking, setIsUnstaking] = useState(false);
+  const [unstakeProgress, setUnstakeProgress] = useState(0);
 
   useEffect(() => {
     if (!stakingContract || !address) return;
@@ -94,6 +96,26 @@ const Stake: NextPage = () => {
 
     await stakingContract.call("claimRewards");
   };
+  
+  const unstakeAll = async () => {
+    if (!stakingContract || stakedNfts.length === 0) return;
+
+    setIsUnstaking(true);
+    setUnstakeProgress(0);
+
+    try {
+      for (let i = 0; i < stakedNfts.length; i++) {
+        await stakingContract.call("withdraw", [stakedNfts[i].metadata.id.toString()]);
+        setUnstakeProgress((prevProgress) => prevProgress + (1 / stakedNfts.length) * 100);
+      }
+      // Refresh the staked NFTs list here if needed
+    } catch (error) {
+      console.error("Error during unstaking all NFTs:", error);
+    } finally {
+      setIsUnstaking(false);
+      setUnstakeProgress(0);
+    }
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -104,8 +126,8 @@ const Stake: NextPage = () => {
       {/* Connect Wallet Button */}
       {!address ? (
         <button className={styles.mainButton} onClick={(e) => connectWithMetamask()}>
-  Connect Wallet
-</button>
+          Connect Wallet
+        </button>
       ) : (
         <>
           {/* Display Token Balance and Claimable Rewards */}
@@ -134,6 +156,15 @@ const Stake: NextPage = () => {
             onClick={() => claimRewards()}
           >
             Claim Rewards
+          </button>
+
+          {/* Unstake All Button */}
+          <button
+            className={`${styles.mainButton} ${styles.spacerTop}`}
+            onClick={unstakeAll}
+            disabled={isUnstaking}
+          >
+            {isUnstaking ? `Unstaking... (${unstakeProgress.toFixed(0)}%)` : 'Unstake All'}
           </button>
 
           {/* Display Staked NFTs */}
@@ -170,4 +201,3 @@ const Stake: NextPage = () => {
 };
 
 export default Stake;
-
